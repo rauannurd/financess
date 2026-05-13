@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GymLog — Тренировка Трекері</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0a;
+  --surface: #111111;
+  --card: #181818;
+  --border: #252525;
+  --accent: #e8ff3c;
+  --accent2: #ff4c3c;
+  --accent3: #3caaff;
+  --text: #f5f5f5;
+  --muted: #666;
+  --radius: 14px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+/* noise texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.4;
+}
+
+/* ── HEADER ── */
+header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: 100;
+}
+.header-inner {
+  max-width: 1100px; margin: 0 auto;
+  padding: 0 24px; height: 60px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.8rem;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  display: flex; align-items: center; gap: 10px;
+}
+.logo span { color: var(--text); }
+.header-date {
+  font-size: 0.8rem; color: var(--muted);
+  font-weight: 500; letter-spacing: 0.05em;
+}
+
+/* ── CONTAINER ── */
+.container {
+  max-width: 1100px; margin: 0 auto;
+  padding: 32px 24px;
+  position: relative; z-index: 1;
+}
+
+/* ── HERO STATS ── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 36px;
+}
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  position: relative; overflow: hidden;
+  cursor: default;
+  transition: transform 0.25s, border-color 0.25s;
+  animation: fadeUp 0.5s ease both;
+}
+.stat-card:nth-child(1) { animation-delay: 0s; }
+.stat-card:nth-child(2) { animation-delay: 0.07s; }
+.stat-card:nth-child(3) { animation-delay: 0.14s; }
+.stat-card:nth-child(4) { animation-delay: 0.21s; }
+.stat-card:hover { transform: translateY(-3px); border-color: var(--accent); }
+.stat-card::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+}
+.stat-card.s1::after { background: var(--accent); }
+.stat-card.s2::after { background: var(--accent2); }
+.stat-card.s3::after { background: var(--accent3); }
+.stat-card.s4::after { background: #b03cff; }
+.stat-icon { font-size: 1.4rem; margin-bottom: 10px; }
+.stat-label {
+  font-size: 0.7rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--muted); margin-bottom: 4px;
+}
+.stat-value {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 2.4rem; line-height: 1;
+  color: var(--text);
+}
+.stat-card.s1 .stat-value { color: var(--accent); }
+
+/* ── TWO COLUMNS ── */
+.layout {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+/* ── FORM PANEL ── */
+.panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  animation: fadeUp 0.5s 0.2s ease both;
+}
+.panel-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.panel-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.2rem; letter-spacing: 0.06em;
+  color: var(--text);
+}
+.panel-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+.panel-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 14px; }
+
+/* ── FORM ELEMENTS ── */
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label {
+  font-size: 0.7rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--muted);
+}
+.form-group input,
+.form-group select,
+.form-group textarea {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: var(--text);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(232,255,60,0.08);
+}
+.form-group select option { background: #1a1a1a; }
+.form-group textarea { resize: vertical; min-height: 70px; }
+
+.row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.btn-primary {
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 20px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.05rem;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+}
+.btn-primary:hover {
+  background: var(--accent2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(255,76,60,0.3);
+}
+.btn-primary:active { transform: scale(0.98); }
+
+/* ── FILTER BAR ── */
+.filter-bar {
+  display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
+}
+.filter-btn {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 50px;
+  padding: 6px 16px;
+  color: var(--muted);
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.8rem; font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.filter-btn:hover { border-color: var(--accent); color: var(--accent); }
+.filter-btn.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #000; font-weight: 600;
+}
+
+/* ── WORKOUT LIST ── */
+.workouts-panel {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  animation: fadeUp 0.5s 0.3s ease both;
+}
+.workouts-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.workouts-body { padding: 16px; max-height: 520px; overflow-y: auto; }
+.workouts-body::-webkit-scrollbar { width: 4px; }
+.workouts-body::-webkit-scrollbar-track { background: transparent; }
+.workouts-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ── WORKOUT ITEM ── */
+.workout-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  display: flex; align-items: flex-start; gap: 14px;
+  transition: border-color 0.2s, transform 0.2s;
+  animation: slideIn 0.3s ease both;
+}
+.workout-item:hover { border-color: var(--border); transform: translateX(2px); }
+.workout-item:last-child { margin-bottom: 0; }
+
+.cat-badge {
+  width: 40px; height: 40px; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem; flex-shrink: 0;
+}
+.cat-strength  { background: rgba(232,255,60,0.12); }
+.cat-cardio    { background: rgba(255,76,60,0.12); }
+.cat-flexibility { background: rgba(60,170,255,0.12); }
+.cat-hiit      { background: rgba(176,60,255,0.12); }
+.cat-other     { background: rgba(255,165,0,0.12); }
+
+.workout-info { flex: 1; min-width: 0; }
+.workout-name {
+  font-weight: 600; font-size: 0.95rem;
+  color: var(--text); margin-bottom: 4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.workout-meta {
+  display: flex; gap: 10px; flex-wrap: wrap;
+}
+.meta-pill {
+  font-size: 0.72rem; font-weight: 500;
+  color: var(--muted);
+  display: flex; align-items: center; gap: 4px;
+}
+.workout-note {
+  font-size: 0.8rem; color: var(--muted);
+  margin-top: 6px; font-style: italic;
+}
+
+.workout-right {
+  display: flex; flex-direction: column;
+  align-items: flex-end; gap: 8px; flex-shrink: 0;
+}
+.workout-date {
+  font-size: 0.72rem; color: var(--muted);
+  white-space: nowrap;
+}
+.workout-kcal {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 1.1rem; color: var(--accent2);
+  line-height: 1;
+}
+.btn-delete {
+  background: none; border: none;
+  color: var(--muted); cursor: pointer;
+  font-size: 1rem; padding: 2px;
+  transition: color 0.2s, transform 0.2s;
+  line-height: 1;
+}
+.btn-delete:hover { color: var(--accent2); transform: scale(1.2); }
+
+/* ── EMPTY STATE ── */
+.empty-state {
+  text-align: center; padding: 48px 24px;
+}
+.empty-icon { font-size: 3rem; margin-bottom: 12px; opacity: 0.4; }
+.empty-text { color: var(--muted); font-size: 0.9rem; }
+
+/* ── PROGRESS BAR ── */
+.weekly-goal {
+  margin-top: 16px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.goal-header {
+  display: flex; justify-content: space-between;
+  font-size: 0.78rem; font-weight: 500;
+  color: var(--muted); margin-bottom: 10px;
+}
+.goal-header span:last-child { color: var(--accent); }
+.progress-track {
+  background: var(--border);
+  border-radius: 4px; height: 6px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 4px;
+  background: linear-gradient(90deg, var(--accent), #b3ff00);
+  transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+}
+
+/* ── CATEGORY DOTS ── */
+.cat-legend {
+  display: flex; gap: 12px; flex-wrap: wrap;
+}
+.cat-dot {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 0.75rem; color: var(--muted); font-weight: 500;
+}
+.dot {
+  width: 8px; height: 8px; border-radius: 50%;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 24px; right: 24px;
+  background: var(--accent); color: #000;
+  padding: 12px 20px; border-radius: 8px;
+  font-weight: 600; font-size: 0.85rem;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  transform: translateY(80px); opacity: 0;
+  transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+  z-index: 999;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 860px) {
+  .layout { grid-template-columns: 1fr; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+  .container { padding: 20px 16px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .workout-item { padding: 12px; }
+  .row-2 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">GYM<span>LOG</span> 💪</div>
+    <div class="header-date" id="headerDate"></div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- STATS -->
+  <div class="stats-grid">
+    <div class="stat-card s1">
+      <div class="stat-icon">🏆</div>
+      <div class="stat-label">Барлық тренировка</div>
+      <div class="stat-value" id="statTotal">0</div>
+    </div>
+    <div class="stat-card s2">
+      <div class="stat-icon">🔥</div>
+      <div class="stat-label">Жалпы калория</div>
+      <div class="stat-value" id="statKcal">0</div>
+    </div>
+    <div class="stat-card s3">
+      <div class="stat-icon">⏱️</div>
+      <div class="stat-label">Жалпы уақыт (мин)</div>
+      <div class="stat-value" id="statTime">0</div>
+    </div>
+    <div class="stat-card s4">
+      <div class="stat-icon">📅</div>
+      <div class="stat-label">Осы аптада</div>
+      <div class="stat-value" id="statWeek">0</div>
+    </div>
+  </div>
+
+  <!-- LAYOUT -->
+  <div class="layout">
+
+    <!-- ADD FORM -->
+    <div>
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-dot"></div>
+          <div class="panel-title">Жаңа Тренировка</div>
+        </div>
+        <div class="panel-body">
+          <div class="form-group">
+            <label>Жаттығу атауы</label>
+            <input type="text" id="inputName" placeholder="Мысалы: Кешкі жүгіру">
+          </div>
+          <div class="form-group">
+            <label>Категория</label>
+            <select id="inputCategory">
+              <option value="strength">💪 Күш жаттығуы</option>
+              <option value="cardio">🏃 Кардио</option>
+              <option value="hiit">⚡ HIIT</option>
+              <option value="flexibility">🧘 Икемділік / Йога</option>
+              <option value="other">🎯 Басқа</option>
+            </select>
+          </div>
+          <div class="row-2">
+            <div class="form-group">
+              <label>Ұзақтық (мин)</label>
+              <input type="number" id="inputDuration" placeholder="45" min="1">
+            </div>
+            <div class="form-group">
+              <label>Калория (ккал)</label>
+              <input type="number" id="inputKcal" placeholder="300" min="0">
+            </div>
+          </div>
+          <div class="row-2">
+            <div class="form-group">
+              <label>Жиындылық</label>
+              <input type="number" id="inputSets" placeholder="4" min="0">
+            </div>
+            <div class="form-group">
+              <label>Қайталау</label>
+              <input type="number" id="inputReps" placeholder="12" min="0">
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Жазба (міндетті емес)</label>
+            <textarea id="inputNote" placeholder="Бүгін өте жақсы сезімдемін..."></textarea>
+          </div>
+          <button class="btn-primary" onclick="addWorkout()">+ ТРЕНИРОВКА ҚОС</button>
+        </div>
+      </div>
+
+      <!-- WEEKLY GOAL -->
+      <div class="weekly-goal" style="margin-top:14px;">
+        <div class="goal-header">
+          <span>Апталық мақсат (5 тренировка)</span>
+          <span id="goalText">0 / 5</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" id="goalBar" style="width:0%"></div>
+        </div>
+      </div>
+
+      <!-- LEGEND -->
+      <div style="margin-top:14px; padding:16px; background:var(--card); border:1px solid var(--border); border-radius:10px;">
+        <div style="font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:10px;">Категориялар</div>
+        <div class="cat-legend">
+          <div class="cat-dot"><div class="dot" style="background:var(--accent)"></div>Күш</div>
+          <div class="cat-dot"><div class="dot" style="background:var(--accent2)"></div>Кардио</div>
+          <div class="cat-dot"><div class="dot" style="background:#b03cff"></div>HIIT</div>
+          <div class="cat-dot"><div class="dot" style="background:var(--accent3)"></div>Йога</div>
+          <div class="cat-dot"><div class="dot" style="background:orange"></div>Басқа</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WORKOUTS LIST -->
+    <div class="workouts-panel">
+      <div class="workouts-header">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div class="panel-dot" style="background:var(--accent2);box-shadow:0 0 8px var(--accent2)"></div>
+          <div class="panel-title">Тренировкалар</div>
+        </div>
+        <div id="listCount" style="font-size:0.8rem;color:var(--muted)"></div>
+      </div>
+      <div style="padding:12px 16px 0; border-bottom:1px solid var(--border);">
+        <div class="filter-bar">
+          <button class="filter-btn active" onclick="setFilter('all', this)">Барлығы</button>
+          <button class="filter-btn" onclick="setFilter('strength', this)">💪 Күш</button>
+          <button class="filter-btn" onclick="setFilter('cardio', this)">🏃 Кардио</button>
+          <button class="filter-btn" onclick="setFilter('hiit', this)">⚡ HIIT</button>
+          <button class="filter-btn" onclick="setFilter('flexibility', this)">🧘 Йога</button>
+        </div>
+      </div>
+      <div class="workouts-body" id="workoutsList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'gymlog_workouts';
+let workouts = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+let currentFilter = 'all';
+
+const catIcons = {
+  strength: '💪', cardio: '🏃', hiit: '⚡', flexibility: '🧘', other: '🎯'
+};
+const catNames = {
+  strength: 'Күш', cardio: 'Кардио', hiit: 'HIIT', flexibility: 'Йога', other: 'Басқа'
+};
+
+// Date header
+const now = new Date();
+document.getElementById('headerDate').textContent =
+  now.toLocaleDateString('kk-KZ', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(workouts));
+}
+
+function addWorkout() {
+  const name     = document.getElementById('inputName').value.trim();
+  const category = document.getElementById('inputCategory').value;
+  const duration = parseInt(document.getElementById('inputDuration').value) || 0;
+  const kcal     = parseInt(document.getElementById('inputKcal').value) || 0;
+  const sets     = parseInt(document.getElementById('inputSets').value) || 0;
+  const reps     = parseInt(document.getElementById('inputReps').value) || 0;
+  const note     = document.getElementById('inputNote').value.trim();
+
+  if (!name) { showToast('⚠️ Жаттығу атауын енгізіңіз!', true); return; }
+  if (!duration) { showToast('⚠️ Ұзақтықты енгізіңіз!', true); return; }
+
+  const workout = {
+    id: Date.now(),
+    name, category, duration, kcal, sets, reps, note,
+    date: new Date().toISOString()
+  };
+
+  workouts.unshift(workout);
+  save();
+  render();
+
+  // clear form
+  document.getElementById('inputName').value = '';
+  document.getElementById('inputDuration').value = '';
+  document.getElementById('inputKcal').value = '';
+  document.getElementById('inputSets').value = '';
+  document.getElementById('inputReps').value = '';
+  document.getElementById('inputNote').value = '';
+
+  showToast('✅ Тренировка сәтті қосылды!');
+}
+
+function deleteWorkout(id) {
+  workouts = workouts.filter(w => w.id !== id);
+  save();
+  render();
+  showToast('🗑️ Жойылды');
+}
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+function render() {
+  // stats
+  const total = workouts.length;
+  const totalKcal = workouts.reduce((s, w) => s + w.kcal, 0);
+  const totalTime = workouts.reduce((s, w) => s + w.duration, 0);
+
+  const weekStart = new Date();
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+  weekStart.setHours(0,0,0,0);
+  const weekCount = workouts.filter(w => new Date(w.date) >= weekStart).length;
+
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statKcal').textContent = totalKcal.toLocaleString();
+  document.getElementById('statTime').textContent = totalTime.toLocaleString();
+  document.getElementById('statWeek').textContent = weekCount;
+
+  // weekly goal
+  const goalPct = Math.min((weekCount / 5) * 100, 100);
+  document.getElementById('goalBar').style.width = goalPct + '%';
+  document.getElementById('goalText').textContent = weekCount + ' / 5';
+
+  // filter
+  const filtered = currentFilter === 'all'
+    ? workouts
+    : workouts.filter(w => w.category === currentFilter);
+
+  document.getElementById('listCount').textContent = filtered.length + ' жазба';
+
+  const list = document.getElementById('workoutsList');
+
+  if (filtered.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">🏋️</div>
+        <div class="empty-text">Тренировкалар жоқ.<br>Бірінші жаттығуыңызды қосыңыз!</div>
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(w => {
+    const d = new Date(w.date);
+    const dateStr = d.toLocaleDateString('kk-KZ', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+    const catClass = 'cat-' + w.category;
+    const metaParts = [];
+    if (w.duration) metaParts.push(`⏱ ${w.duration} мин`);
+    if (w.sets && w.reps) metaParts.push(`📊 ${w.sets}×${w.reps}`);
+    else if (w.sets) metaParts.push(`📊 ${w.sets} жиын`);
+
+    return `
+      <div class="workout-item">
+        <div class="cat-badge ${catClass}">${catIcons[w.category]}</div>
+        <div class="workout-info">
+          <div class="workout-name">${escHtml(w.name)}</div>
+          <div class="workout-meta">
+            <span class="meta-pill" style="color:#aaa">🏷 ${catNames[w.category]}</span>
+            ${metaParts.map(p => `<span class="meta-pill">${p}</span>`).join('')}
+          </div>
+          ${w.note ? `<div class="workout-note">"${escHtml(w.note)}"</div>` : ''}
+        </div>
+        <div class="workout-right">
+          <div class="workout-date">${dateStr}</div>
+          ${w.kcal ? `<div class="workout-kcal">${w.kcal} ккал</div>` : ''}
+          <button class="btn-delete" onclick="deleteWorkout(${w.id})" title="Жою">✕</button>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function showToast(msg, isError = false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.background = isError ? 'var(--accent2)' : 'var(--accent)';
+  t.style.color = '#000';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// Enter key support
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && e.ctrlKey) addWorkout();
+});
+
+// Init with sample data if empty
+if (workouts.length === 0) {
+  const samples = [
+    { id: 1, name: 'Таңғы жүгіру', category: 'cardio', duration: 30, kcal: 280, sets: 0, reps: 0, note: 'Ерте тұрып жүгірдім, тамаша!', date: new Date(Date.now()-86400000).toISOString() },
+    { id: 2, name: 'Кеуде + трицепс', category: 'strength', duration: 55, kcal: 350, sets: 4, reps: 10, note: '', date: new Date(Date.now()-172800000).toISOString() },
+    { id: 3, name: 'HIIT — Tabata', category: 'hiit', duration: 20, kcal: 220, sets: 8, reps: 20, note: 'Өте қиын, бірақ нәтижелі', date: new Date(Date.now()-259200000).toISOString() },
+  ];
+  workouts = samples;
+  save();
+}
+
+render();
+</script>
+</body>
+</html>
